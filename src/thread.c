@@ -134,6 +134,7 @@ void *monitor_proc(void *unused) {
   for(;;) {
     fflush(stderr); // make sure it gets printed
     int i = 0;
+    int die = 0;
 
     //this next little section sleeps 10 seconds before continuing
     //and checks every second whether the maximum execution time (-x) has
@@ -142,24 +143,29 @@ void *monitor_proc(void *unused) {
       sleep(1);
       time_t current = time(NULL);
       time_t elapsed = current - start;
-      if(elapsed>maxexectime || elapsed==maxexectime){
-        if(maxexectime > 0){
-          error(X_MAXTIME_REACH);
-        }
+      if(elapsed>=maxexectime){
+        die = 1;
+        break;
+//        if(maxexectime > 0){
+//          error(X_MAXTIME_REACH);
+//        }
       }
     }
-
-
-    if(found)
-      return 0;
 
     time_t current = time(NULL);
     time_t elapsed = current - start;
 
+//    if(!elapsed)
+//      continue; // be paranoid and avoid divide-by-zero exceptions
 
     fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
            loop, (int)elapsed, loop / elapsed);
 
+    if (die)
+      error(X_MAXTIME_REACH);
+
+    if(found)
+      return 0;
   }
 
   return 0; // unreachable code, but prevents warnings (!?)
