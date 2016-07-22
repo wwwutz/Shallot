@@ -128,8 +128,8 @@ void *worker(void *params) { // life cycle of a cracking pthread
 }
 
 void *monitor_proc(void *unused) {
-  fprintf(stderr,"\033[sPlease wait a moment for statistics...");
   time_t start = time(NULL);
+  fprintf(stderr,"Start at %"PRIu64" for %d seconds\n",start,maxexectime);
 
   for(;;) {
     fflush(stderr); // make sure it gets printed
@@ -157,7 +157,7 @@ void *monitor_proc(void *unused) {
     time_t elapsed = current - start;
 
 
-    fprintf(stderr,"\033[u\033[KHashes: %-20"PRIu64"  Time: %-10d  Speed: %-"PRIu64"",
+    fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
            loop, (int)elapsed, loop / elapsed);
 
   }
