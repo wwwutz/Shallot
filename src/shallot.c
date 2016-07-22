@@ -178,6 +178,10 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
             usage();
           }
           maxexectime = strtoul(argv[x + 1], NULL, 0);
+          if (maxexectime < 1) {
+            fprintf(stderr, "Error: -x %"PRIu64" is a weird value\n",maxexectime);
+            exit(X_WRONG_NUMARGS);
+          }
           dbreak = 1;
           break;
         }

@@ -128,38 +128,44 @@ void *worker(void *params) { // life cycle of a cracking pthread
 }
 
 void *monitor_proc(void *unused) {
-  fprintf(stderr,"\033[sPlease wait a moment for statistics...");
   time_t start = time(NULL);
+  fprintf(stderr,"Start at %"PRIu64" for %"PRIu64" seconds\n",start,maxexectime);
 
   for(;;) {
     fflush(stderr); // make sure it gets printed
     int i = 0;
+    int die = 0;
 
-    //this next little section sleeps 20 seconds before continuing
+    //this next little section sleeps 10 seconds before continuing
     //and checks every second whether the maximum execution time (-x) has
     //been reached.
-    for(i=0;i<20;i++){
+    for(i=0;i<10;i++){
       sleep(1);
       time_t current = time(NULL);
       time_t elapsed = current - start;
-      if(elapsed>maxexectime || elapsed==maxexectime){
-        if(maxexectime > 0){
-          error(X_MAXTIME_REACH);
-        }
+      if(elapsed>=maxexectime){
+        die = 1;
+        break;
+//        if(maxexectime > 0){
+//          error(X_MAXTIME_REACH);
+//        }
       }
     }
-
-
-    if(found)
-      return 0;
 
     time_t current = time(NULL);
     time_t elapsed = current - start;
 
+//    if(!elapsed)
+//      continue; // be paranoid and avoid divide-by-zero exceptions
 
-    fprintf(stderr,"\033[u\033[KHashes: %-20"PRIu64"  Time: %-10d  Speed: %-"PRIu64"",
+    fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
            loop, (int)elapsed, loop / elapsed);
 
+    if (die)
+      error(X_MAXTIME_REACH);
+
+    if(found)
+      return 0;
   }
 
   return 0; // unreachable code, but prevents warnings (!?)
