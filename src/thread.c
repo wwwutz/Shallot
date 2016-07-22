@@ -135,10 +135,10 @@ void *monitor_proc(void *unused) {
     fflush(stderr); // make sure it gets printed
     int i = 0;
 
-    //this next little section sleeps 20 seconds before continuing
+    //this next little section sleeps 10 seconds before continuing
     //and checks every second whether the maximum execution time (-x) has
     //been reached.
-    for(i=0;i<20;i++){
+    for(i=0;i<10;i++){
       sleep(1);
       time_t current = time(NULL);
       time_t elapsed = current - start;
