@@ -129,6 +129,9 @@ void *worker(void *params) { // life cycle of a cracking pthread
 
 void *monitor_proc(void *unused) {
   time_t start = time(NULL);
+  time_t current = start; // at least init them 8-)
+  time_t elapsed = current - start;
+  int stats_printed = 0;
   fprintf(stderr,"Start at %"PRIu64" for %"PRIu64" seconds\n",start,maxexectime);
 
   for(;;) {
@@ -141,25 +144,20 @@ void *monitor_proc(void *unused) {
     //been reached.
     for(i=0;i<10;i++){
       sleep(1);
-      time_t current = time(NULL);
-      time_t elapsed = current - start;
-      if(elapsed>=maxexectime){
+      current = time(NULL);
+      elapsed = current - start;
+      if(elapsed>=maxexectime) {
         die = 1;
         break;
-//        if(maxexectime > 0){
-//          error(X_MAXTIME_REACH);
-//        }
       }
     }
 
-    time_t current = time(NULL);
-    time_t elapsed = current - start;
-
-//    if(!elapsed)
-//      continue; // be paranoid and avoid divide-by-zero exceptions
-
-    fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
+    // we know it's alive, so we only show stats once for benchmark purposes
+    if (!stats_printed) {
+        fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
            loop, (int)elapsed, loop / elapsed);
+        stats_printed = 1;
+    }
 
     if (die)
       error(X_MAXTIME_REACH);
