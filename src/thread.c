@@ -129,7 +129,7 @@ void *worker(void *params) { // life cycle of a cracking pthread
 
 void *monitor_proc(void *unused) {
   time_t start = time(NULL);
-  fprintf(stderr,"Start at %"PRIu64" for %d seconds\n",start,maxexectime);
+  fprintf(stderr,"Start at %"PRIu64" for %"PRIu64" seconds\n",start,maxexectime);
 
   for(;;) {
     fflush(stderr); // make sure it gets printed
