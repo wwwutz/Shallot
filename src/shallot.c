@@ -59,6 +59,11 @@ void terminate(int signum) { // Ctrl-C/kill handler
   error(X_SGNL_INT_TERM);
 }
 
+void timesup(int signum) { // Ctrl-C/kill handler
+  die = 1; // and die.
+}
+
+
 int main(int argc, char *argv[]) { // onions are fun, here we go
   signal(SIGTERM, terminate); // always let people kill
 
@@ -72,7 +77,6 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
   elim = DEFAULT_E_LIMIT;
   loop = 0;
   found = 0;
-  monitor = 0;
   maxexectime = 0; // forever
 
   #ifdef BSD                                   // my
@@ -147,10 +151,6 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
           daemon = 1;
           break;
         }
-        case 'm': { // monitor
-          monitor = 1;
-          break;
-        }
         case 'o': { // prime optimization
           optimum = 1;
           break;
@@ -209,13 +209,6 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
     }
   }
 
-  // now for our sanity checks
-  if(threads < 1)
-    error(X_INVALID_THRDS);
-
-  if(monitor && file)
-    error(X_EXCLUSIVE_OPT);
-
   if(!(elim & 1) || (elim < RSA_PK_EXPONENT) || (elim > MAXIMUM_E_LIMIT))
     error(X_INVALID_E_LIM);
 
@@ -271,27 +264,12 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
 
   } else signal(SIGINT, terminate); // die on CTRL-C
 
-  pthread_t thrd;
-
-  // create our threads for 2+ cores
-  for(x = 1; x < threads; x++) {
-
-    if(pthread_create(&thrd, NULL, worker, &optimum))
-      error(X_THREAD_CREATE);
+  if (maxexectime) {
+     signal(SIGALRM, timesup);
+     alarm(maxexectime);
   }
 
-  if(monitor && maxexectime) {
-    // TODO: when support is added for -mv, put a message here
-    if(pthread_create(&thrd, NULL, monitor_proc, NULL))
-      error(X_THREAD_CREATE);
-  }
-
-  worker(&optimum); // use main thread for brute-forcing too
-
-  if(pthread_self() != lucky_thread) { // be safe and avoid EDEADLK
-
-    pthread_join(lucky_thread, NULL); // wait for the lucky thread to exit
-  }
+  worker(&optimum);
 
   regfree(regex);
   return 0;

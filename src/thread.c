@@ -33,7 +33,22 @@ void *worker(void *params) { // life cycle of a cracking pthread
   SHA_CTX hash, copy;
   RSA *rsa;
 
+  die = 0; // global yuk
+  time_t start = time(NULL);
+  time_t current = start; // at least init them 8-)
+  time_t elapsed = current - start;
+  
+  fflush(stderr); // make sure it gets printed
+  fprintf(stderr,"Start at %"PRIu64" for",start);
+  if (maxexectime) {
+    fprintf(stderr," %"PRIu64" seconds\n",maxexectime);
+  }
+  else {
+    fprintf(stderr,"ever\n");
+  }
+
   while(!found) {
+    if ( die ) break;
     // keys are only generated every so often
     // every 549,755,781,120 tries by default
 
@@ -57,6 +72,7 @@ void *worker(void *params) { // life cycle of a cracking pthread
     uint8_t *e_ptr = ((uint8_t*)&e_be) + 8 - e_bytes;
 
     while((e <= elim) && !found) { // main loop
+      if (die) break;
       // copy the relevant parts of our already set up context
       memcpy(&copy, &hash, SHA_REL_CTX_LEN); // 40 bytes here...
       copy.num = hash.num;                   // and don't forget the num (9)
@@ -76,9 +92,6 @@ void *worker(void *params) { // life cycle of a cracking pthread
         // let our main thread know on which thread to wait
         lucky_thread = pthread_self();
         found = 1; // kill off our other threads, asynchronously
-
-        if(monitor)
-          printf("\n"); // keep our printing pretty!
 
         if(!BN_bin2bn(e_ptr, e_bytes, rsa->e)) // store our e in the actual key
           error(X_BIGNUM_FAILED);              // and make sure it got there
@@ -123,47 +136,11 @@ void *worker(void *params) { // life cycle of a cracking pthread
     }
     RSA_free(rsa);
   }
+  elapsed = time(NULL) - start;
+  if ( elapsed > 0 ) {
+     fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
+       loop, (int)elapsed, loop / elapsed);
+  }
 
   return 0;
-}
-
-void *monitor_proc(void *unused) {
-  time_t start = time(NULL);
-  time_t current = start; // at least init them 8-)
-  time_t elapsed = current - start;
-  int stats_printed = 0;
-  fprintf(stderr,"Start at %"PRIu64" for",start);
-  if (maxexectime) {
-    fprintf(stderr," %"PRIu64" seconds\n",maxexectime);
-  }
-  else {
-    fprintf(stderr,"ever\n");
-  }
-  for(;;) {
-    fflush(stderr); // make sure it gets printed
-    int die = 0;
-    // 10 seconds poll is enough
-    sleep(10);
-    current = time(NULL);
-    elapsed = current - start;
-    if(elapsed>=maxexectime) {
-      die = 1;
-      break;
-    }
-
-    // we know it's alive, so we only show stats once for benchmark purposes
-    if (!stats_printed) {
-        fprintf(stderr,"%"PRIu64" hashes in %d s = %"PRIu64" H/s\n",
-           loop, (int)elapsed, loop / elapsed);
-        stats_printed = 1;
-    }
-
-    if (die)
-      error(X_MAXTIME_REACH);
-
-    if(found)
-      return 0;
-  }
-
-  return 0; // unreachable code, but prevents warnings (!?)
 }
