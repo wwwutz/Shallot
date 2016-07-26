@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
   loop = 0;
   found = 0;
   monitor = 0;
+  maxexectime = 0; // forever
 
   #ifdef BSD                                   // my
   int mib[2] = { CTL_HW, HW_NCPU };            // how
@@ -279,7 +280,7 @@ int main(int argc, char *argv[]) { // onions are fun, here we go
       error(X_THREAD_CREATE);
   }
 
-  if(monitor) {
+  if(monitor && maxexectime) {
     // TODO: when support is added for -mv, put a message here
     if(pthread_create(&thrd, NULL, monitor_proc, NULL))
       error(X_THREAD_CREATE);

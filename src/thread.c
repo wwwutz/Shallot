@@ -132,24 +132,23 @@ void *monitor_proc(void *unused) {
   time_t current = start; // at least init them 8-)
   time_t elapsed = current - start;
   int stats_printed = 0;
-  fprintf(stderr,"Start at %"PRIu64" for %"PRIu64" seconds\n",start,maxexectime);
-
+  fprintf(stderr,"Start at %"PRIu64" for",start);
+  if (maxexectime) {
+    fprintf(stderr," %"PRIu64" seconds\n",maxexectime);
+  }
+  else {
+    fprintf(stderr,"ever\n");
+  }
   for(;;) {
     fflush(stderr); // make sure it gets printed
-    int i = 0;
     int die = 0;
-
-    //this next little section sleeps 10 seconds before continuing
-    //and checks every second whether the maximum execution time (-x) has
-    //been reached.
-    for(i=0;i<10;i++){
-      sleep(1);
-      current = time(NULL);
-      elapsed = current - start;
-      if(elapsed>=maxexectime) {
-        die = 1;
-        break;
-      }
+    // 10 seconds poll is enough
+    sleep(10);
+    current = time(NULL);
+    elapsed = current - start;
+    if(elapsed>=maxexectime) {
+      die = 1;
+      break;
     }
 
     // we know it's alive, so we only show stats once for benchmark purposes
